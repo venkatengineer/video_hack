@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ASTRA-IST: 8-second explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--bg:#05070d;--fg:#e8eef8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:'Space Grotesk',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{position:relative;width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9}
+canvas{width:100%;height:100%;display:block}
+#ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,7,13,.4)}
+#ui p{margin:0;font-size:15px;opacity:.8;max-width:440px;text-align:center;line-height:1.4}
+button{font:700 22px 'Space Grotesk',system-ui,sans-serif;padding:14px 34px;border-radius:999px;border:2px solid #7fe3ff;background:#0b1a2a;color:#e8f9ff;cursor:pointer}
+button:focus-visible{outline:3px solid #ffd166;outline-offset:3px}
+</style></head><body>
+<div id="stage"><canvas id="c" width="1280" height="720"></canvas>
+<div id="ui"><button id="play">Play (12 s)</button><p id="note">Start your screen recorder first, then press Play. The button hides itself while the video runs.</p></div></div>
+<script>
+const C=document.getElementById('c'),x=C.getContext('2d'),W=1280,H=720;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),seg=(t,a,b)=>clamp((t-a)/(b-a)),ease=v=>v<.5?2*v*v:1-Math.pow(-2*v+2,2)/2;
+const HF="'Space Grotesk',system-ui,sans-serif",PX="'VT323',ui-monospace,monospace";
+let sd=7;const rnd=()=>(sd=(sd*9301+49297)%233280)/233280;
+const stars=Array.from({length:70},()=>[rnd()*W,rnd()*600,1+rnd()*1.8]);
+function rr(a,b,w,h,r,f,s){x.beginPath();x.roundRect(a,b,w,h,r);if(f){x.fillStyle=f;x.fill()}if(s){x.strokeStyle=s;x.lineWidth=2;x.stroke()}}
+function panel(a,b,w,h,t){rr(a,b,w,h,16,'#0e1626','#22324f');x.fillStyle='#8aa0c4';x.font='600 18px '+HF;x.textAlign='left';x.fillText(t,a+22,b+34)}
+function cap(t,al=1){x.globalAlpha=al;x.font='700 34px '+HF;x.textAlign='center';const w=x.measureText(t).width+60;rr(W/2-w/2,636,w,60,14,'rgba(0,0,0,.6)');x.fillStyle='#fff';x.fillText(t,W/2,677);x.globalAlpha=1;x.textAlign='left'}
+function sky(c1,c2){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,W,H);x.fillStyle='#fff';stars.forEach(s=>{x.globalAlpha=.25+.3*s[2];x.fillRect(s[0],s[1],s[2],s[2])});x.globalAlpha=1}
+function rocket(cx,cy,a,s,fl){x.save();x.translate(cx,cy);x.rotate(a);x.scale(s,s);
+ if(fl){const L=40+Math.random()*30,g=x.createLinearGradient(0,60,0,100+L);g.addColorStop(0,'#fff6c8');g.addColorStop(.4,'#ffb347');g.addColorStop(1,'rgba(255,90,40,0)');x.fillStyle=g;x.beginPath();x.moveTo(-14,60);x.lineTo(0,100+L);x.lineTo(14,60);x.fill()}
+ x.fillStyle='#c9d3e3';x.beginPath();x.moveTo(-20,60);x.lineTo(-20,-50);x.quadraticCurveTo(0,-130,20,-50);x.lineTo(20,60);x.fill();
+ x.fillStyle='#e5484d';x.beginPath();x.moveTo(-20,60);x.lineTo(-44,86);x.lineTo(-20,30);x.fill();x.beginPath();x.moveTo(20,60);x.lineTo(44,86);x.lineTo(20,30);x.fill();
+ x.fillStyle='#17304d';x.beginPath();x.arc(0,-20,9,0,7);x.fill();x.restore()}
+const cracks=[[-10,-16,-2,-4],[-2,-4,-12,6],[-2,-4,8,2],[8,2,14,14],[8,2,16,-6],[-12,6,-20,10],[-6,-12,4,-18]];
+const mx=(a,b,k)=>Math.round(a+(b-a)*k);
+function bead(cx,cy,s,h){x.strokeStyle='#9aa7b8';x.lineWidth=3;x.beginPath();x.moveTo(cx-8*s,cy+14*s);x.lineTo(cx-14*s,cy+60*s);x.moveTo(cx+8*s,cy+14*s);x.lineTo(cx+14*s,cy+60*s);x.stroke();
+ x.shadowColor='rgba(255,140,60,'+(h*.9)+')';x.shadowBlur=36*h;x.fillStyle=`rgb(${mx(120,255,h)},${mx(105,138,h)},${mx(105,60,h)})`;x.beginPath();x.ellipse(cx,cy,26*s,20*s,0,0,7);x.fill();x.shadowBlur=0;
+ x.strokeStyle='#150c0c';x.lineWidth=Math.max(1.5,1.1*s);cracks.slice(0,Math.floor((1-h)*9)).forEach(c=>{x.beginPath();x.moveTo(cx+c[0]*s,cy+c[1]*s);x.lineTo(cx+c[2]*s,cy+c[3]*s);x.stroke()})}
+
+function sceneA(t){sky('#04060d','#1b2c4a');x.fillStyle='#10192b';x.fillRect(0,640,W,80);
+ const ry=560-ease(seg(t,0,2))*420;
+ for(let i=0;i<14;i++){const yy=ry+100+i*26;if(yy>660)continue;x.fillStyle=`rgba(210,220,235,${.22-i*.014})`;x.beginPath();x.arc(400+Math.sin(i*2+t*9)*12,yy,18+i*3,0,7);x.fill()}
+ rocket(400,ry,0,1.5,true);
+ const p=ease(seg(t,1.1,1.5));if(p>0){x.globalAlpha=p;panel(760,140,430,330,'Avionics bay');rr(800,210,350,200,10,'#0f3a2c','#1d6b52');
+  x.fillStyle='#1b1f2a';[[820,230],[1020,230],[820,340]].forEach(c=>x.fillRect(c[0],c[1],70,40));
+  bead(1010,345,1.3,1);x.fillStyle='#c8d4e8';x.font='600 18px '+HF;x.fillText('Thermistor',968,438);x.globalAlpha=1}
+ cap('Launch',seg(t,0,.2))}
+
+function dash(a,b,w,h,small){panel(a,b,w,h,'Temperature monitor');x.fillStyle='#37e58f';x.font='700 '+(small?56:120)+'px '+HF;x.fillText('28.4 °C',a+40,b+(small?h-34:200));
+ x.font='600 '+(small?20:26)+'px '+HF;x.fillText('● Status: OK ✔',a+40,b+(small?h-8:260))}
+function sceneB(t){x.fillStyle='#070b14';x.fillRect(0,0,W,H);const p=seg(t,2,4),mo=p*6;
+ dash(70,110,540,300,false);
+ x.strokeStyle='#37e58f';x.lineWidth=3;x.beginPath();for(let i=0;i<=40;i++){const px=110+i*11,py=380+Math.sin(i*1.7+t*8)*3;i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
+ x.fillStyle='#8aa0c4';x.font='600 22px '+HF;x.fillText('Thermistor, '+(mo<.3?'day 1':'month '+Math.max(1,Math.round(mo))),760,150);
+ bead(960,270,2.4,1-p*.8);
+ x.fillStyle='#8aa0c4';x.font='600 18px '+HF;x.fillText('Actual sensor response: '+Math.round(100-38*p)+'%',760,420);
+ rr(760,432,420,12,6,'#1c2740');rr(760,432,420*(1-.38*p),12,6,'#e5484d');
+ x.strokeStyle='#2a3d5e';x.lineWidth=4;x.beginPath();x.moveTo(130,560);x.lineTo(1150,560);x.stroke();
+ x.fillStyle='#e8eef8';x.font='600 20px '+HF;x.textAlign='center';[['Day 1',130],['Month 3',640],['Month 6',1150]].forEach(a=>{x.fillText(a[0],a[1],598);x.fillRect(a[1]-2,550,4,20)});x.textAlign='left';
+ x.fillStyle='#ffd166';x.beginPath();x.arc(130+p*1020,560,12,0,7);x.fill();
+ cap('Readings look normal.')}
+
+function sceneC(t){const u=seg(t,4,5);sky('#0a0508','#2a1220');
+ for(let k=0;k<12;k++){const v=Math.max(0,u-k*.035);x.fillStyle=`rgba(200,200,210,${.28-k*.022})`;x.beginPath();x.arc(620+v*v*520,300+v*120+70,16+k*2.5,0,7);x.fill()}
+ rocket(620+u*u*520,300+u*120,u*1.6,1.3,true);
+ x.fillStyle=`rgba(229,72,77,${.3*(.5+.5*Math.sin(t*28))})`;x.fillRect(0,0,W,H);
+ const s=ease(seg(t,4.25,4.6));if(s>0){x.save();x.translate(W/2,170);x.scale(s,s);x.textAlign='center';x.font='700 96px '+HF;x.lineWidth=8;x.strokeStyle='#2a0a0e';x.strokeText('MISSION FAILED',0,0);x.fillStyle='#ff5a5f';x.fillText('MISSION FAILED',0,0);x.restore();x.textAlign='left'}
+ dash(60,500,430,130,true);x.fillStyle='#c8d4e8';x.font='600 18px '+HF;x.fillText('The dashboard said everything was fine.',60,490)}
+
+function resp(u,A,tr,tc){const up=.3,pk=1-Math.exp(-up/tr);return u<up?A*(1-Math.exp(-u/tr))/pk:A*Math.exp(-(u-up)/tc)}
+const gx=u=>610+u*580,gy=v=>490-v*290;
+function sceneD(t){x.fillStyle='#0a1220';x.fillRect(0,0,W,H);
+ const g=seg(t,5.3,6.8),on=g>0&&g<.3;
+ panel(60,110,460,430,'ASTRA-IST test head');rr(90,170,220,300,10,'#0f3a2c','#1d6b52');x.fillStyle='#c8d4e8';x.font='600 18px '+HF;x.fillText('ESP32',110,200);
+ rr(110,390,150,60,6,'#000','#3b4c6b');x.fillStyle='#7fe3ff';x.font='24px '+PX;x.fillText(g>0?'Testing...':'Ready',122,428);
+ x.strokeStyle='#8aa0c4';x.lineWidth=3;x.beginPath();x.moveTo(310,255);x.lineTo(350,255);x.moveTo(310,340);x.lineTo(380,340);x.stroke();
+ x.shadowColor='rgba(255,120,40,'+(on?1:0)+')';x.shadowBlur=on?40:0;rr(350,240,110,30,6,on?'#ff7a30':'#6b4a3a');x.shadowBlur=0;
+ x.fillStyle='#c8d4e8';x.font='600 18px '+HF;x.fillText('Heater resistor',350,228);bead(420,330,1.2,.6);x.fillText('Thermistor',376,420);
+ panel(560,110,660,430,'Response to the heat pulse');
+ x.fillStyle='rgba(255,170,60,.1)';x.fillRect(gx(0),180,gx(.3)-gx(0),310);x.fillStyle='#ffb347';x.font='600 16px '+HF;x.fillText('Heater ON',gx(0)+8,200);
+ x.strokeStyle='#3b4c6b';x.lineWidth=2;x.beginPath();x.moveTo(gx(0),170);x.lineTo(gx(0),490);x.lineTo(gx(1),490);x.stroke();x.fillStyle='#8aa0c4';x.fillText('time',gx(1)-34,514);
+ const ha=seg(t,5,5.25);x.globalAlpha=ha;x.setLineDash([7,7]);x.strokeStyle='#e8eef8';x.lineWidth=3;x.beginPath();for(let u=0;u<=1.001;u+=.01){const px=gx(u),py=gy(resp(u,1,.1,.22));u?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();x.setLineDash([]);x.globalAlpha=1;
+ x.strokeStyle='#ffb347';x.lineWidth=4;x.beginPath();for(let u=0;u<=g+.0001;u+=.01){const px=gx(u),py=gy(resp(u,.62,.17,.4));u?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
+ x.fillStyle='#e8eef8';x.font='600 17px '+HF;x.fillText('- - Healthy baseline',840,150);x.fillStyle='#ffb347';x.fillText('— Measured now',1030,150);
+ if(g>.95){x.font='700 24px '+HF;x.fillText('Match with healthy curve: 62%',gx(0),528)}
+ cap('Heat pulse → response curve → compare')}
+
+function sceneE(t){x.fillStyle='#070b14';x.fillRect(0,0,W,H);
+ const v=Math.round(100-38*ease(seg(t,7.05,7.6)));
+ rr(300,110,680,360,26,'#161c2a','#2b3650');rr(340,150,600,280,8,'#000');
+ x.fillStyle='#e8f9ff';x.font='52px '+PX;x.fillText('ASTRA-IST',372,205);x.font='38px '+PX;x.fillStyle='#7fe3ff';x.fillText('Temp: 29.4 C   Heater: OFF',372,255);
+ x.fillStyle='#e8f9ff';x.font='64px '+PX;x.fillText('Health: '+v+'%',372,328);
+ rr(372,345,536,16,3,null,'#7fe3ff');x.fillStyle='#7fe3ff';x.fillRect(374,347,532*v/100,12);
+ if(v<=62&&Math.floor(t*6)%2===0){x.fillStyle='#ffb347';x.font='38px '+PX;x.fillText('RESPONSE ANOMALY',372,412)}
+ x.fillStyle='#fff';x.font='700 46px '+HF;x.textAlign='center';x.fillText('ASTRA-IST: detect it early.',W/2,590);x.textAlign='left'}
+
+function draw(t){x.globalAlpha=1;x.setLineDash([]);x.textAlign='left';x.shadowBlur=0;let s=0;
+ if(t<2)sceneA(t);else if(t<4){sceneB(t);s=2}else if(t<5){sceneC(t);s=4}else if(t<7){sceneD(t);s=5}else{sceneE(t);s=7}
+ const f=1-seg(t,s,s+.12);if(f>0&&s>0){x.fillStyle=`rgba(0,0,0,${f})`;x.fillRect(0,0,W,H)}}
+const ui=document.getElementById('ui'),btn=document.getElementById('play'),note=document.getElementById('note');let t0=0;
+const DUR=12;function loop(now){const t=Math.max(0,(now-t0)/1000*8/DUR);if(t>=8){draw(7.999);ui.style.display='flex';ui.style.background='transparent';btn.textContent='Replay';note.style.display='none';return}draw(t);requestAnimationFrame(loop)}
+function play(){ui.style.display='none';t0=performance.now();requestAnimationFrame(loop)}
+btn.addEventListener('click',play);
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&ui.style.display!=='none'){e.preventDefault();play()}});
+draw(1.3);(document.fonts&&document.fonts.ready||Promise.resolve()).then(()=>{if(ui.style.display!=='none')draw(1.3)});
+</script></body></html>
