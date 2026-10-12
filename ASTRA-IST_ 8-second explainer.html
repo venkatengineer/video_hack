@@ -8,9 +8,9 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:'Space Grotesk',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#stage{position:relative;width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9}
+#stage{position:relative;width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;cursor:pointer}
 canvas{width:100%;height:100%;display:block}
-#ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,7,13,.4)}
+#ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,7,13,.4);user-select:none}
 #ui p{margin:0;font-size:15px;opacity:.8;max-width:440px;text-align:center;line-height:1.4}
 button{font:700 22px 'Space Grotesk',system-ui,sans-serif;padding:14px 34px;border-radius:999px;border:2px solid #7fe3ff;background:#0b1a2a;color:#e8f9ff;cursor:pointer}
 button:focus-visible{outline:3px solid #ffd166;outline-offset:3px}
@@ -98,10 +98,68 @@ function sceneE(t){x.fillStyle='#070b14';x.fillRect(0,0,W,H);
 function draw(t){x.globalAlpha=1;x.setLineDash([]);x.textAlign='left';x.shadowBlur=0;let s=0;
  if(t<2)sceneA(t);else if(t<4){sceneB(t);s=2}else if(t<5){sceneC(t);s=4}else if(t<7){sceneD(t);s=5}else{sceneE(t);s=7}
  const f=1-seg(t,s,s+.12);if(f>0&&s>0){x.fillStyle=`rgba(0,0,0,${f})`;x.fillRect(0,0,W,H)}}
-const ui=document.getElementById('ui'),btn=document.getElementById('play'),note=document.getElementById('note');let t0=0;
-const DUR=12;function loop(now){const t=Math.max(0,(now-t0)/1000*8/DUR);if(t>=8){draw(7.999);ui.style.display='flex';ui.style.background='transparent';btn.textContent='Replay';note.style.display='none';return}draw(t);requestAnimationFrame(loop)}
-function play(){ui.style.display='none';t0=performance.now();requestAnimationFrame(loop)}
-btn.addEventListener('click',play);
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&ui.style.display!=='none'){e.preventDefault();play()}});
-draw(1.3);(document.fonts&&document.fonts.ready||Promise.resolve()).then(()=>{if(ui.style.display!=='none')draw(1.3)});
+const ui=document.getElementById('ui'),btn=document.getElementById('play'),note=document.getElementById('note'),stage=document.getElementById('stage');
+const DUR=12,HOLD=1.5,FADE=0.4,CYCLE=DUR+HOLD+FADE;
+let isPlaying=true,startTime=performance.now(),pauseOffset=0,rafId=null;
+
+function loop(now){
+  if(!isPlaying)return;
+  const elapsed=(now-startTime)/1000;
+  const cycleSec=elapsed%CYCLE;
+  if(cycleSec<DUR){
+    const t=(cycleSec/DUR)*8;
+    draw(t);
+  }else if(cycleSec<DUR+HOLD){
+    const holdSec=cycleSec-DUR;
+    draw(7.8+holdSec);
+  }else{
+    const fadeProgress=(cycleSec-(DUR+HOLD))/FADE;
+    draw(7.8+HOLD);
+    x.fillStyle=`rgba(5,7,13,${clamp(fadeProgress)})`;
+    x.fillRect(0,0,W,H);
+  }
+  if(cycleSec<0.25){
+    const fadeIn=1-(cycleSec/0.25);
+    x.fillStyle=`rgba(5,7,13,${clamp(fadeIn)})`;
+    x.fillRect(0,0,W,H);
+  }
+  rafId=requestAnimationFrame(loop);
+}
+
+function startPlay(){
+  if(isPlaying)return;
+  isPlaying=true;
+  startTime=performance.now()-pauseOffset;
+  ui.style.display='none';
+  rafId=requestAnimationFrame(loop);
+}
+
+function pausePlay(){
+  if(!isPlaying)return;
+  isPlaying=false;
+  pauseOffset=performance.now()-startTime;
+  if(rafId)cancelAnimationFrame(rafId);
+  ui.style.display='flex';
+  ui.style.background='rgba(5,7,13,.5)';
+  btn.textContent='Resume';
+  note.textContent='Click canvas or press Space to resume • 🔁 Looping continuously';
+  note.style.display='block';
+}
+
+function togglePlay(){
+  if(isPlaying)pausePlay();
+  else startPlay();
+}
+
+btn.addEventListener('click',e=>{e.stopPropagation();togglePlay();});
+stage.addEventListener('click',()=>togglePlay());
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();togglePlay();}});
+
+ui.style.display='none';
+startTime=performance.now();
+isPlaying=true;
+rafId=requestAnimationFrame(loop);
+(document.fonts&&document.fonts.ready||Promise.resolve()).then(()=>{
+  if(isPlaying&&!rafId)rafId=requestAnimationFrame(loop);
+});
 </script></body></html>
